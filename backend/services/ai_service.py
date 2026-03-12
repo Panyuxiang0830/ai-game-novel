@@ -4,9 +4,9 @@ import json
 import re
 from anthropic import Anthropic
 from typing import Dict, List, Optional
-from ..models.scenario import ScenarioSeed
-from ..models.game import PlayerState, PlayerAction
-from ..models.novel import NovelSkeleton, ChapterRequest
+from models.scenario import ScenarioSeed
+from models.game import PlayerState, PlayerAction
+from models.novel import NovelSkeleton, ChapterRequest
 
 
 class AIService:

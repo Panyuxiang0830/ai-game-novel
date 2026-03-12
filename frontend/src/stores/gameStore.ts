@@ -4,7 +4,7 @@ import axios from 'axios';
 
 const API_BASE = 'http://localhost:8000/api';
 
-interface PlayerState {
+export interface PlayerState {
   health: number;
   hunger: number;
   thirst: number;
@@ -19,7 +19,7 @@ interface PlayerState {
   inventory: any[];
 }
 
-interface GameState {
+export interface GameState {
   session_id: string;
   scenario_id: string;
   player: PlayerState;
@@ -28,7 +28,7 @@ interface GameState {
   status: string;
 }
 
-interface GameTurn {
+export interface GameTurn {
   turn_num: number;
   player_input: string;
   ai_response: string;

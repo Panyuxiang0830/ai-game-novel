@@ -1,11 +1,19 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-@layer base {
-  body {
-    @apply bg-apocalypse-bg text-apocalypse-text;
-    margin: 0;
-    min-height: 100vh;
-  }
+@theme {
+  --color-apocalypse-bg: #0a0a0f;
+  --color-apocalypse-card: #12121a;
+  --color-apocalypse-border: #1e1e2e;
+  --color-apocalypse-text: #e0e0e0;
+  --color-apocalypse-muted: #6b6b7b;
+  --color-apocalypse-danger: #ff4757;
+  --color-apocalypse-warning: #ffa502;
+  --color-apocalypse-success: #2ed573;
+}
+
+body {
+  background-color: var(--color-apocalypse-bg);
+  color: var(--color-apocalypse-text);
+  margin: 0;
+  min-height: 100vh;
 }

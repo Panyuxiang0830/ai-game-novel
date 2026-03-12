@@ -3,8 +3,8 @@ import json
 from pathlib import Path
 from typing import Dict, List, Optional
 from sqlalchemy import select
-from ..models.scenario import ScenarioSeed
-from ..database.models import ScenarioModel
+from models.scenario import ScenarioSeed
+from database.models import ScenarioModel
 
 
 class ScenarioLoader:

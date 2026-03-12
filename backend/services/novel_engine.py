@@ -3,13 +3,13 @@ import uuid
 from typing import Dict, List, Optional
 from datetime import datetime
 
-from ..models.scenario import ScenarioSeed
-from ..models.game import GameState, GameTurn
-from ..models.novel import (
+from models.scenario import ScenarioSeed
+from models.game import GameState, GameTurn
+from models.novel import (
     NovelProject, NovelSkeleton, NovelChapter,
     ChapterRequest, NovelStatus, ChapterStatus
 )
-from .ai_service import ai_service
+from services.ai_service import ai_service
 
 
 class NovelEngine:

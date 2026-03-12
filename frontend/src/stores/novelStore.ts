@@ -4,7 +4,7 @@ import axios from 'axios';
 
 const API_BASE = 'http://localhost:8000/api';
 
-interface NovelChapter {
+export interface NovelChapter {
   chapter_num: number;
   title: string;
   event_title: string;
@@ -13,7 +13,7 @@ interface NovelChapter {
   status: string;
 }
 
-interface NovelSkeleton {
+export interface NovelSkeleton {
   premise: string;
   estimated_chapters: number;
   chapter_outlines: any[];
@@ -21,7 +21,7 @@ interface NovelSkeleton {
   main_character_arc: string;
 }
 
-interface NovelProject {
+export interface NovelProject {
   novel_id: string;
   session_id: string;
   scenario_id: string;
