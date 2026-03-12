@@ -42,6 +42,17 @@ settings = Settings()
 # 解析 CORS origins
 cors_origins_list = settings.cors_origins.split(",")
 
+# 运行时存储的 API keys (session_id -> api_key)
+_session_api_keys: dict = {}
+
+def set_session_api_key(session_id: str, api_key: str) -> None:
+    """设置会话的 API key"""
+    _session_api_keys[session_id] = api_key
+
+def get_session_api_key(session_id: str) -> str | None:
+    """获取会话的 API key"""
+    return _session_api_keys.get(session_id)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

@@ -15,12 +15,14 @@ router = APIRouter()
 class CreateSessionRequest(BaseModel):
     scenario_id: str
     config: Optional[ScenarioConfig] = None
+    api_key: Optional[str] = None  # 用户提供的 API key
 
 
 class ProcessTurnRequest(BaseModel):
     action: str
     input_type: str = "free"
     context: str = ""
+    api_key: Optional[str] = None  # 用户提供的 API key
 
 
 @router.post("/create", response_model=GameState)
@@ -36,6 +38,11 @@ async def create_session(request: CreateSessionRequest) -> GameState:
 
     # 创建游戏会话
     session = await game_engine.create_session(scenario, config)
+
+    # 存储 API key（如果提供）
+    if request.api_key:
+        game_engine.set_api_key(session.session_id, request.api_key)
+
     return session
 
 
@@ -60,6 +67,11 @@ async def process_turn(session_id: str, request: ProcessTurnRequest) -> GameTurn
     if not scenario:
         raise HTTPException(status_code=404, detail=f"场景 {session.scenario_id} 不存在")
 
+    # 构建 API key（使用请求中的或存储的）
+    api_key = request.api_key or game_engine.get_api_key(session_id)
+    if not api_key:
+        raise HTTPException(status_code=400, detail="API key is required. Please provide your Anthropic API key.")
+
     # 构建玩家动作
     player_action = PlayerAction(
         action=request.action,
@@ -71,7 +83,8 @@ async def process_turn(session_id: str, request: ProcessTurnRequest) -> GameTurn
         session_id=session_id,
         player_action=player_action,
         scenario=scenario,
-        context=request.context
+        context=request.context,
+        api_key=api_key
     )
     return turn
 

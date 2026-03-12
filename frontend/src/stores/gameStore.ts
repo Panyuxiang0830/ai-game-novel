@@ -45,8 +45,8 @@ interface GameStore {
   error: string | null;
 
   // Actions
-  createSession: (scenarioId: string, config?: any) => Promise<void>;
-  processTurn: (action: string, context: string) => Promise<void>;
+  createSession: (scenarioId: string, apiKey: string, config?: any) => Promise<void>;
+  processTurn: (action: string, context: string, apiKey?: string) => Promise<void>;
   getSession: (sessionId: string) => Promise<void>;
   getHistory: (sessionId: string) => Promise<void>;
   clearError: () => void;
@@ -58,11 +58,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
   isLoading: false,
   error: null,
 
-  createSession: async (scenarioId: string, config?: any) => {
+  createSession: async (scenarioId: string, apiKey: string, config?: any) => {
     set({ isLoading: true, error: null });
     try {
       const response = await axios.post(`${API_BASE}/games/create`, {
         scenario_id: scenarioId,
+        api_key: apiKey,
         config: config || { scenario_id: scenarioId }
       });
       set({ currentSession: response.data, history: [], isLoading: false });
@@ -71,15 +72,23 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
   },
 
-  processTurn: async (action: string, context: string) => {
+  processTurn: async (action: string, context: string, apiKey?: string) => {
     set({ isLoading: true, error: null });
     const { currentSession } = get();
     if (!currentSession) return;
 
+    // 获取 API key
+    const effectiveApiKey = apiKey || localStorage.getItem('anthropic_api_key');
+
     try {
       const response = await axios.post(
         `${API_BASE}/games/${currentSession.session_id}/turn`,
-        { action, input_type: 'free', context }
+        {
+          action,
+          input_type: 'free',
+          context,
+          api_key: effectiveApiKey
+        }
       );
 
       set(state => ({

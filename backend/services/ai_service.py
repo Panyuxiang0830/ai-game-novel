@@ -15,8 +15,15 @@ class AIService:
     def __init__(self, api_key: str = None):
         if api_key is None:
             api_key = os.getenv("ANTHROPIC_API_KEY")
-        self.client = Anthropic(api_key=api_key)
+        self.default_api_key = api_key
         self.model = "claude-3-5-sonnet-20241022"
+
+    def _get_client(self, api_key: str = None) -> Anthropic:
+        """获取 API 客户端"""
+        key = api_key or self.default_api_key
+        if not key:
+            raise ValueError("API key is required. Please set ANTHROPIC_API_KEY in .env or provide it when creating a game.")
+        return Anthropic(api_key=key)
 
     async def generate_turn_response(
         self,
@@ -24,15 +31,17 @@ class AIService:
         player_state: PlayerState,
         player_action: PlayerAction,
         context: str,
-        history_summary: str = ""
+        history_summary: str = "",
+        api_key: str = None
     ) -> Dict:
         """生成游戏回合响应"""
+        client = self._get_client(api_key)
         system_prompt = self._build_game_system_prompt(scenario, player_state)
         user_message = self._build_turn_user_message(
             scenario, player_action, context, history_summary
         )
 
-        response = self.client.messages.create(
+        response = client.messages.create(
             model=self.model,
             max_tokens=2000,
             system=system_prompt,
@@ -157,9 +166,11 @@ true/false
     async def generate_novel_skeleton(
         self,
         scenario: ScenarioSeed,
-        player_background: str = ""
+        player_background: str = "",
+        api_key: str = None
     ) -> NovelSkeleton:
         """生成小说骨架"""
+        client = self._get_client(api_key)
         system_prompt = f"""你是末世小说的架构师。根据游戏场景生成小说骨架。
 
 【场景信息】
@@ -184,7 +195,7 @@ true/false
   "main_character_arc": "主角成长弧线描述"
 }}"""
 
-        response = self.client.messages.create(
+        response = client.messages.create(
             model=self.model,
             max_tokens=1500,
             system=system_prompt,
@@ -226,9 +237,11 @@ true/false
         self,
         request: ChapterRequest,
         skeleton: NovelSkeleton,
-        scenario: ScenarioSeed
+        scenario: ScenarioSeed,
+        api_key: str = None
     ) -> str:
         """生成单个小说章节"""
+        client = self._get_client(api_key)
         chapter_info = skeleton.chapter_outlines[request.chapter_num - 1] if request.chapter_num <= len(skeleton.chapter_outlines) else {}
 
         system_prompt = f"""你是末世小说作家,正在撰写《末世生存》第{request.chapter_num}章。

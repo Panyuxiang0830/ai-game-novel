@@ -15,10 +15,12 @@ class CreateNovelRequest(BaseModel):
     session_id: str
     scenario_id: str
     player_background: str = ""
+    api_key: Optional[str] = None  # 用户提供的 API key
 
 
 class GenerateChapterRequest(BaseModel):
     event_context: str
+    api_key: Optional[str] = None  # 用户提供的 API key
 
 
 @router.post("/create", response_model=NovelProject)
@@ -29,11 +31,15 @@ async def create_novel(request: CreateNovelRequest) -> NovelProject:
     if not scenario:
         raise HTTPException(status_code=404, detail=f"场景 {request.scenario_id} 不存在")
 
+    if not request.api_key:
+        raise HTTPException(status_code=400, detail="API key is required. Please provide your Anthropic API key.")
+
     # 创建小说项目
     project = await novel_engine.create_project(
         session_id=request.session_id,
         scenario=scenario,
-        player_background=request.player_background
+        player_background=request.player_background,
+        api_key=request.api_key
     )
     return project
 
@@ -68,12 +74,18 @@ async def generate_chapter(novel_id: str, chapter_num: int, request: GenerateCha
     if not scenario:
         raise HTTPException(status_code=404, detail=f"场景 {project.scenario_id} 不存在")
 
+    # 构建 API key（使用请求中的或存储的）
+    api_key = request.api_key or novel_engine.get_api_key(novel_id)
+    if not api_key:
+        raise HTTPException(status_code=400, detail="API key is required. Please provide your Anthropic API key.")
+
     # 生成章节
     chapter = await novel_engine.generate_chapter(
         novel_id=novel_id,
         chapter_num=chapter_num,
         event_context=request.event_context,
-        scenario=scenario
+        scenario=scenario,
+        api_key=api_key
     )
     return chapter
 

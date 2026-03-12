@@ -17,20 +17,35 @@ class NovelEngine:
 
     def __init__(self):
         self._projects: Dict[str, NovelProject] = {}
+        self._api_keys: Dict[str, str] = {}  # novel_id -> api_key
+
+    def set_api_key(self, novel_id: str, api_key: str) -> None:
+        """设置小说项目的 API key"""
+        self._api_keys[novel_id] = api_key
+
+    def get_api_key(self, novel_id: str) -> str | None:
+        """获取小说项目的 API key"""
+        return self._api_keys.get(novel_id)
 
     async def create_project(
         self,
         session_id: str,
         scenario: ScenarioSeed,
-        player_background: str = ""
+        player_background: str = "",
+        api_key: str = None
     ) -> NovelProject:
         """创建小说项目"""
         novel_id = str(uuid.uuid4())
 
+        # 存储 API key
+        if api_key:
+            self._api_keys[novel_id] = api_key
+
         # 生成小说骨架
         skeleton = await ai_service.generate_novel_skeleton(
             scenario=scenario,
-            player_background=player_background
+            player_background=player_background,
+            api_key=api_key
         )
 
         # 创建章节占位符
@@ -63,7 +78,8 @@ class NovelEngine:
         novel_id: str,
         chapter_num: int,
         event_context: str,
-        scenario: ScenarioSeed
+        scenario: ScenarioSeed,
+        api_key: str = None
     ) -> NovelChapter:
         """生成单个章节"""
         project = self._projects.get(novel_id)
@@ -78,6 +94,9 @@ class NovelEngine:
         # 如果已生成，直接返回
         if chapter.status == ChapterStatus.COMPLETED:
             return chapter
+
+        # 获取 API key
+        effective_api_key = api_key or self._api_keys.get(novel_id)
 
         # 获取上一章内容（用于上下文）
         previous_chapter = None
@@ -101,7 +120,8 @@ class NovelEngine:
         content = await ai_service.generate_chapter(
             request=request,
             skeleton=project.skeleton,
-            scenario=scenario
+            scenario=scenario,
+            api_key=effective_api_key
         )
 
         # 更新章节

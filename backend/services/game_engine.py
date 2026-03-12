@@ -18,6 +18,15 @@ class GameEngine:
     def __init__(self):
         self._sessions: Dict[str, GameState] = {}
         self._histories: Dict[str, List[GameTurn]] = {}
+        self._api_keys: Dict[str, str] = {}  # session_id -> api_key
+
+    def set_api_key(self, session_id: str, api_key: str) -> None:
+        """设置会话的 API key"""
+        self._api_keys[session_id] = api_key
+
+    def get_api_key(self, session_id: str) -> str | None:
+        """获取会话的 API key"""
+        return self._api_keys.get(session_id)
 
     async def create_session(
         self,
@@ -97,7 +106,8 @@ class GameEngine:
         session_id: str,
         player_action: PlayerAction,
         scenario: ScenarioSeed,
-        context: str
+        context: str,
+        api_key: str | None = None
     ) -> GameTurn:
         """处理游戏回合"""
         session = self._sessions.get(session_id)
@@ -106,6 +116,9 @@ class GameEngine:
 
         if session.status != GameStatus.ACTIVE:
             raise ValueError(f"Session {session_id} is not active")
+
+        # 使用会话的 API key 或传入的 API key
+        effective_api_key = api_key or self._api_keys.get(session_id)
 
         # 构建历史摘要
         history_summary = self._build_history_summary(session_id)
@@ -116,7 +129,8 @@ class GameEngine:
             player_state=session.player,
             player_action=player_action,
             context=context,
-            history_summary=history_summary
+            history_summary=history_summary,
+            api_key=effective_api_key
         )
 
         # 应用状态变化
