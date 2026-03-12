@@ -18,7 +18,7 @@ class AIService:
         self.client = Anthropic(api_key=api_key)
         self.model = "claude-3-5-sonnet-20241022"
 
-    async def generate_turn_response(
+    def generate_turn_response(
         self,
         scenario: ScenarioSeed,
         player_state: PlayerState,
@@ -133,7 +133,7 @@ true/false
         if changes_match:
             try:
                 state_changes = json.loads(changes_match.group(1).strip())
-            except:
+            except (json.JSONDecodeError, KeyError):
                 pass
 
         # 提取options
@@ -154,7 +154,7 @@ true/false
             "is_key_event": is_key_event
         }
 
-    async def generate_novel_skeleton(
+    def generate_novel_skeleton(
         self,
         scenario: ScenarioSeed,
         player_background: str = ""
@@ -209,7 +209,7 @@ true/false
 
             skeleton_data = json.loads(content)
             return NovelSkeleton(**skeleton_data)
-        except:
+        except (json.JSONDecodeError, ValueError, KeyError):
             # 返回默认骨架
             return NovelSkeleton(
                 premise=scenario.premise,
@@ -222,7 +222,7 @@ true/false
                 main_character_arc="末世中的求生与成长"
             )
 
-    async def generate_chapter(
+    def generate_chapter(
         self,
         request: ChapterRequest,
         skeleton: NovelSkeleton,
