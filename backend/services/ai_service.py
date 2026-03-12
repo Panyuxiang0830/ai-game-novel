@@ -2,6 +2,8 @@
 import os
 import json
 import re
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from anthropic import Anthropic
 from typing import Dict, List, Optional
 from models.scenario import ScenarioSeed
@@ -17,6 +19,7 @@ class AIService:
             api_key = os.getenv("ANTHROPIC_API_KEY")
         self.default_api_key = api_key
         self.model = "claude-3-5-sonnet-20241022"
+        self._executor = ThreadPoolExecutor(max_workers=4)
 
     def _get_client(self, api_key: str = None) -> Anthropic:
         """获取 API 客户端"""
@@ -35,22 +38,27 @@ class AIService:
         api_key: str = None
     ) -> Dict:
         """生成游戏回合响应"""
-        client = self._get_client(api_key)
-        system_prompt = self._build_game_system_prompt(scenario, player_state)
-        user_message = self._build_turn_user_message(
-            scenario, player_action, context, history_summary
-        )
+        loop = asyncio.get_event_loop()
 
-        response = client.messages.create(
-            model=self.model,
-            max_tokens=2000,
-            system=system_prompt,
-            messages=[{"role": "user", "content": user_message}],
-            temperature=0.8
-        )
+        def _generate():
+            client = self._get_client(api_key)
+            system_prompt = self._build_game_system_prompt(scenario, player_state)
+            user_message = self._build_turn_user_message(
+                scenario, player_action, context, history_summary
+            )
 
-        content = response.content[0].text
-        return self._parse_game_response(content)
+            response = client.messages.create(
+                model=self.model,
+                max_tokens=2000,
+                system=system_prompt,
+                messages=[{"role": "user", "content": user_message}],
+                temperature=0.8
+            )
+
+            content = response.content[0].text
+            return self._parse_game_response(content)
+
+        return await loop.run_in_executor(self._executor, _generate)
 
     def _build_game_system_prompt(self, scenario: ScenarioSeed, player_state: PlayerState) -> str:
         """构建游戏系统提示词"""
@@ -170,8 +178,11 @@ true/false
         api_key: str = None
     ) -> NovelSkeleton:
         """生成小说骨架"""
-        client = self._get_client(api_key)
-        system_prompt = f"""你是末世小说的架构师。根据游戏场景生成小说骨架。
+        loop = asyncio.get_event_loop()
+
+        def _generate():
+            client = self._get_client(api_key)
+            system_prompt = f"""你是末世小说的架构师。根据游戏场景生成小说骨架。
 
 【场景信息】
 类型: {scenario.name}
@@ -195,43 +206,45 @@ true/false
   "main_character_arc": "主角成长弧线描述"
 }}"""
 
-        response = client.messages.create(
-            model=self.model,
-            max_tokens=1500,
-            system=system_prompt,
-            messages=[{
-                "role": "user",
-                "content": f"玩家背景: {player_background}\n\n请生成小说骨架。"
-            }],
-            temperature=0.7
-        )
-
-        content = response.content[0].text
-
-        # 尝试提取JSON
-        try:
-            json_match = re.search(r'```json\s*(.*?)\s*```', content, re.DOTALL)
-            if json_match:
-                content = json_match.group(1)
-            else:
-                json_match = re.search(r'\{.*\}', content, re.DOTALL)
-                if json_match:
-                    content = json_match.group(0)
-
-            skeleton_data = json.loads(content)
-            return NovelSkeleton(**skeleton_data)
-        except (json.JSONDecodeError, ValueError, KeyError):
-            # 返回默认骨架
-            return NovelSkeleton(
-                premise=scenario.premise,
-                estimated_chapters=5,
-                chapter_outlines=[
-                    {"chapter": i, "title": f"第{i}章", "event_hint": "待定", "theme": "生存"}
-                    for i in range(1, 6)
-                ],
-                narrative_style=scenario.narrative_style,
-                main_character_arc="末世中的求生与成长"
+            response = client.messages.create(
+                model=self.model,
+                max_tokens=1500,
+                system=system_prompt,
+                messages=[{
+                    "role": "user",
+                    "content": f"玩家背景: {player_background}\n\n请生成小说骨架。"
+                }],
+                temperature=0.7
             )
+
+            content = response.content[0].text
+
+            # 尝试提取JSON
+            try:
+                json_match = re.search(r'```json\s*(.*?)\s*```', content, re.DOTALL)
+                if json_match:
+                    content = json_match.group(1)
+                else:
+                    json_match = re.search(r'\{.*\}', content, re.DOTALL)
+                    if json_match:
+                        content = json_match.group(0)
+
+                skeleton_data = json.loads(content)
+                return NovelSkeleton(**skeleton_data)
+            except (json.JSONDecodeError, ValueError, KeyError):
+                # 返回默认骨架
+                return NovelSkeleton(
+                    premise=scenario.premise,
+                    estimated_chapters=5,
+                    chapter_outlines=[
+                        {"chapter": i, "title": f"第{i}章", "event_hint": "待定", "theme": "生存"}
+                        for i in range(1, 6)
+                    ],
+                    narrative_style=scenario.narrative_style,
+                    main_character_arc="末世中的求生与成长"
+                )
+
+        return await loop.run_in_executor(self._executor, _generate)
 
     async def generate_chapter(
         self,
@@ -281,7 +294,7 @@ true/false
                 "content": f"【上一章内容】\n{request.previous_chapter}"
             })
 
-        response = self.client.messages.create(
+        response = client.messages.create(
             model=self.model,
             max_tokens=3000,
             system=system_prompt,
@@ -291,6 +304,63 @@ true/false
 
         content = response.content[0].text
         return content
+
+        # 在异步函数中需要使用 executor
+        loop = asyncio.get_event_loop()
+
+        def _generate():
+            client = self._get_client(api_key)
+            chapter_info = skeleton.chapter_outlines[request.chapter_num - 1] if request.chapter_num <= len(skeleton.chapter_outlines) else {}
+
+            system_prompt = f"""你是末世小说作家,正在撰写《末世生存》第{request.chapter_num}章。
+
+【小说骨架】
+前提: {skeleton.premise}
+风格: {skeleton.narrative_style}
+主角弧线: {skeleton.main_character_arc}
+
+【本章大纲】
+{json.dumps(chapter_info, ensure_ascii=False, indent=2)}
+
+【写作要求】
+1. 纯文学化,绝不要出现数值描述(如"生命值-10")
+2. 重点描写:感官体验、内心活动、环境氛围
+3. 用"展示而非讲述"的手法
+4. 保持与前文的连贯性
+5. 字数:1000-1500字
+6. 根据游戏事件文学化处理,而非简单记录
+
+【文学化转化示例】
+游戏数据: "生命值下降,感到虚弱"
+小说描写: "视线开始模糊,每一次呼吸都像是有刀片在肺里切割。他靠在墙上,冷汗浸透了后背。"
+
+游戏数据: "精神值下降,产生幻觉"
+小说描写: "阴影在墙角蠕动。他眨了眨眼,那东西又不见了——是幻觉吗?还是有什么东西在暗中窥视?"
+
+【当前事件】
+{request.event_context}"""
+
+            messages = [{"role": "user", "content": "请撰写这一章节。"}]
+
+            # 如果有上一章,添加作为参考
+            if request.previous_chapter:
+                messages.insert(0, {
+                    "role": "assistant",
+                    "content": f"【上一章内容】\n{request.previous_chapter}"
+                })
+
+            response = client.messages.create(
+                model=self.model,
+                max_tokens=3000,
+                system=system_prompt,
+                messages=messages,
+                temperature=0.9
+            )
+
+            content = response.content[0].text
+            return content
+
+        return await loop.run_in_executor(self._executor, _generate)
 
 
 # 全局AI服务实例
