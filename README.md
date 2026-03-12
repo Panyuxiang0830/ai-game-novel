@@ -1,1 +1,1 @@
-# ai-
+# ai-game-novel
