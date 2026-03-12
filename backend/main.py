@@ -7,6 +7,7 @@ from pathlib import Path
 backend_dir = Path(__file__).parent
 sys.path.insert(0, str(backend_dir))
 
+from typing import Optional
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -49,7 +50,7 @@ def set_session_api_key(session_id: str, api_key: str) -> None:
     """设置会话的 API key"""
     _session_api_keys[session_id] = api_key
 
-def get_session_api_key(session_id: str) -> str | None:
+def get_session_api_key(session_id: str) -> Optional[str]:
     """获取会话的 API key"""
     return _session_api_keys.get(session_id)
 
@@ -58,8 +59,9 @@ def get_session_api_key(session_id: str) -> str | None:
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     # 启动时
-    print("🚀 启动末世生存小说生成器 API...")
-    print(f"   Claude API: {'✅ 已配置' if settings.anthropic_api_key else '❌ 未配置'}")
+    print("[启动] 末世生存小说生成器 API...")
+    status = "[已配置]" if settings.anthropic_api_key else "[未配置]"
+    print(f"   Claude API: {status}")
     print(f"   数据库: {settings.database_url}")
 
     # 初始化数据库
@@ -70,7 +72,7 @@ async def lifespan(app: FastAPI):
     yield
 
     # 关闭时
-    print("👋 关闭 API...")
+    print("[关闭] API...")
 
 
 # 创建 FastAPI 应用

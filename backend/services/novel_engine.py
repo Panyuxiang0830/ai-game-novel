@@ -23,7 +23,7 @@ class NovelEngine:
         """设置小说项目的 API key"""
         self._api_keys[novel_id] = api_key
 
-    def get_api_key(self, novel_id: str) -> str | None:
+    def get_api_key(self, novel_id: str) -> Optional[str]:
         """获取小说项目的 API key"""
         return self._api_keys.get(novel_id)
 

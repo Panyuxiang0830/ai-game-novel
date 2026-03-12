@@ -1,5 +1,5 @@
 // frontend/src/components/GameNarrative.tsx
-import { GameTurn } from '../stores/gameStore';
+import type { GameTurn } from '../stores/gameStore';
 import ReactMarkdown from 'react-markdown';
 
 interface GameNarrativeProps {

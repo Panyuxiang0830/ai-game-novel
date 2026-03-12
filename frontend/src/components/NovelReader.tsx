@@ -1,5 +1,5 @@
 // frontend/src/components/NovelReader.tsx
-import { NovelProject } from '../stores/novelStore';
+import type { NovelProject } from '../stores/novelStore';
 import ReactMarkdown from 'react-markdown';
 import { useState } from 'react';
 

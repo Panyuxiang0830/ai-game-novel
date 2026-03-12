@@ -24,7 +24,7 @@ class GameEngine:
         """设置会话的 API key"""
         self._api_keys[session_id] = api_key
 
-    def get_api_key(self, session_id: str) -> str | None:
+    def get_api_key(self, session_id: str) -> Optional[str]:
         """获取会话的 API key"""
         return self._api_keys.get(session_id)
 
@@ -107,7 +107,7 @@ class GameEngine:
         player_action: PlayerAction,
         scenario: ScenarioSeed,
         context: str,
-        api_key: str | None = None
+        api_key: Optional[str] = None
     ) -> GameTurn:
         """处理游戏回合"""
         session = self._sessions.get(session_id)

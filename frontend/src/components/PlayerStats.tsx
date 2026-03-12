@@ -1,5 +1,5 @@
 // frontend/src/components/PlayerStats.tsx
-import { PlayerState } from '../stores/gameStore';
+import type { PlayerState } from '../stores/gameStore';
 
 interface PlayerStatsProps {
   player: PlayerState;

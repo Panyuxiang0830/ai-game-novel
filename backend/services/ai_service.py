@@ -123,13 +123,15 @@ true/false
         history_summary: str
     ) -> str:
         """构建回合用户消息"""
+        newline = "\n"
+        history_part = f"【之前情节摘要】{newline}{history_summary}" if history_summary else ""
         return f"""【当前情境】
 {context}
 
 【玩家行动】
 {player_action.action}
 
-{f"【之前情节摘要】\n{history_summary}" if history_summary else ""}
+{history_part}
 
 请生成响应。"""
 
@@ -291,7 +293,7 @@ true/false
         if request.previous_chapter:
             messages.insert(0, {
                 "role": "assistant",
-                "content": f"【上一章内容】\n{request.previous_chapter}"
+                "content": f"【上一章内容】" + "\n" + request.previous_chapter
             })
 
         response = client.messages.create(
@@ -346,7 +348,7 @@ true/false
             if request.previous_chapter:
                 messages.insert(0, {
                     "role": "assistant",
-                    "content": f"【上一章内容】\n{request.previous_chapter}"
+                    "content": f"【上一章内容】" + "\n" + request.previous_chapter
                 })
 
             response = client.messages.create(

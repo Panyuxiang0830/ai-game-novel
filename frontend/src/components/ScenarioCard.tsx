@@ -1,5 +1,5 @@
 // frontend/src/components/ScenarioCard.tsx
-import { Scenario } from '../stores/scenarioStore';
+import type { Scenario } from '../stores/scenarioStore';
 
 interface ScenarioCardProps {
   scenario: Scenario;
