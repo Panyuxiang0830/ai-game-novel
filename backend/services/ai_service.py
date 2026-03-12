@@ -18,7 +18,7 @@ class AIService:
         self.client = Anthropic(api_key=api_key)
         self.model = "claude-3-5-sonnet-20241022"
 
-    def generate_turn_response(
+    async def generate_turn_response(
         self,
         scenario: ScenarioSeed,
         player_state: PlayerState,
@@ -154,7 +154,7 @@ true/false
             "is_key_event": is_key_event
         }
 
-    def generate_novel_skeleton(
+    async def generate_novel_skeleton(
         self,
         scenario: ScenarioSeed,
         player_background: str = ""
@@ -222,7 +222,7 @@ true/false
                 main_character_arc="末世中的求生与成长"
             )
 
-    def generate_chapter(
+    async def generate_chapter(
         self,
         request: ChapterRequest,
         skeleton: NovelSkeleton,
