@@ -1,6 +1,6 @@
 # backend/models/scenario.py
 from pydantic import BaseModel, Field
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 
 class ScenarioSeed(BaseModel):
@@ -9,10 +9,10 @@ class ScenarioSeed(BaseModel):
     name: str = Field(..., description="场景名称")
     description: str = Field(..., description="场景描述")
     premise: str = Field(..., description="世界背景设定")
-    world_rules: Dict = Field(default_factory=dict, description="世界规则")
-    survival_mechanics: Dict = Field(default_factory=dict, description="生存机制")
+    world_rules: Dict[str, Any] = Field(default_factory=dict, description="世界规则")
+    survival_mechanics: Dict[str, Any] = Field(default_factory=dict, description="生存机制")
     possible_events: List[str] = Field(default_factory=list, description="可能发生的事件")
-    ending_conditions: Dict = Field(default_factory=dict, description="结局条件")
+    ending_conditions: Dict[str, Any] = Field(default_factory=dict, description="结局条件")
     narrative_style: str = Field(..., description="叙事风格")
     is_custom: bool = Field(default=False, description="是否为自定义场景")
 

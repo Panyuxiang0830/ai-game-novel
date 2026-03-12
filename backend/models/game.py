@@ -1,8 +1,15 @@
 # backend/models/game.py
 from pydantic import BaseModel, Field
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Literal
 from datetime import datetime
 from enum import Enum
+
+
+class GameStatus(str, Enum):
+    """游戏状态"""
+    ACTIVE = "active"
+    ENDED = "ended"
+    PAUSED = "paused"
 
 
 class ConditionType(str, Enum):
@@ -21,7 +28,7 @@ class Item(BaseModel):
     id: str
     name: str
     description: str
-    category: str  # food, water, weapon, medicine, material
+    category: Literal["food", "water", "weapon", "medicine", "material"]
     consumable: bool = True
     effects: Optional[Dict[str, int]] = None
 
@@ -72,7 +79,7 @@ class GameState(BaseModel):
     player: PlayerState
     current_location: str = "unknown"
     time_elapsed: int = Field(default=0, description="经过的回合数")
-    status: str = Field(default="active", description="active, ended, paused")
+    status: GameStatus = Field(default=GameStatus.ACTIVE, description="游戏状态")
     created_at: datetime = Field(default_factory=datetime.now)
     ended_at: Optional[datetime] = None
 
@@ -82,6 +89,7 @@ class GameTurn(BaseModel):
     turn_num: int
     player_input: str
     ai_response: str
+    # 状态变化：key为属性名，value为变化值（正数增加，负数减少）
     state_changes: Dict[str, int] = Field(default_factory=dict)
     items_gained: List[Item] = Field(default_factory=list)
     items_lost: List[str] = Field(default_factory=list)
