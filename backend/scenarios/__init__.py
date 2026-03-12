@@ -2,13 +2,15 @@
 import json
 from pathlib import Path
 from typing import Dict, List, Optional
+from sqlalchemy import select
 from ..models.scenario import ScenarioSeed
+from ..database.models import ScenarioModel
 
 
 class ScenarioLoader:
     """场景加载器"""
 
-    def __init__(self, presets_dir: str = None):
+    def __init__(self, presets_dir: Optional[str] = None):
         if presets_dir is None:
             presets_dir = Path(__file__).parent / "presets"
         self.presets_dir = Path(presets_dir)
@@ -23,8 +25,11 @@ class ScenarioLoader:
         if not scenario_file.exists():
             return None
 
-        with open(scenario_file, 'r', encoding='utf-8') as f:
-            data = json.load(f)
+        try:
+            with open(scenario_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+        except (json.JSONDecodeError, UnicodeDecodeError) as e:
+            return None
 
         scenario = ScenarioSeed(**data)
         self._cache[scenario_id] = scenario
@@ -42,8 +47,6 @@ class ScenarioLoader:
 
     async def load_custom(self, scenario_id: str, db_session) -> Optional[ScenarioSeed]:
         """从数据库加载自定义场景"""
-        from ..database.models import ScenarioModel
-        from sqlalchemy import select
 
         result = await db_session.execute(
             select(ScenarioModel).where(ScenarioModel.id == scenario_id)
