@@ -1,5 +1,5 @@
 # backend/database/models.py
-from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime, Text, JSON
+from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime, Text, JSON, ForeignKey, Index, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from .db import Base
@@ -8,6 +8,10 @@ from .db import Base
 class SessionModel(Base):
     """游戏会话表"""
     __tablename__ = "sessions"
+    __table_args__ = (
+        Index('ix_session_scenario', 'scenario_id'),
+        Index('ix_session_status', 'status'),
+    )
 
     id = Column(String, primary_key=True)
     scenario_id = Column(String, nullable=False)
@@ -15,7 +19,7 @@ class SessionModel(Base):
     current_location = Column(String)
     time_elapsed = Column(Integer, default=0)
     status = Column(String, default="active")
-    created_at = Column(DateTime, default=datetime.now)
+    created_at = Column(DateTime, default=datetime.now())
     ended_at = Column(DateTime, nullable=True)
 
     # 关联
@@ -26,9 +30,13 @@ class SessionModel(Base):
 class GameTurnModel(Base):
     """游戏回合表"""
     __tablename__ = "game_turns"
+    __table_args__ = (
+        Index('ix_turn_session', 'session_id'),
+        UniqueConstraint('session_id', 'turn_num', name='uq_session_turn'),
+    )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    session_id = Column(String, nullable=False)
+    session_id = Column(String, ForeignKey("sessions.id"), nullable=False)
     turn_num = Column(Integer, nullable=False)
     player_input = Column(Text, nullable=False)
     ai_response = Column(Text, nullable=False)
@@ -37,7 +45,7 @@ class GameTurnModel(Base):
     items_lost = Column(JSON)
     is_key_event = Column(Boolean, default=False)
     event_type = Column(String)
-    timestamp = Column(DateTime, default=datetime.now)
+    timestamp = Column(DateTime, default=datetime.now())
 
     # 关联
     session = relationship("SessionModel", back_populates="turns")
@@ -46,14 +54,17 @@ class GameTurnModel(Base):
 class NovelModel(Base):
     """小说项目表"""
     __tablename__ = "novels"
+    __table_args__ = (
+        Index('ix_novel_session', 'session_id'),
+    )
 
     id = Column(String, primary_key=True)
-    session_id = Column(String, nullable=False)
+    session_id = Column(String, ForeignKey("sessions.id"), nullable=False)
     scenario_id = Column(String, nullable=False)
     skeleton = Column(JSON)
     status = Column(String, default="in_progress")
     total_words = Column(Integer, default=0)
-    created_at = Column(DateTime, default=datetime.now)
+    created_at = Column(DateTime, default=datetime.now())
     completed_at = Column(DateTime, nullable=True)
 
     # 关联
@@ -64,9 +75,12 @@ class NovelModel(Base):
 class ChapterModel(Base):
     """小说章节表"""
     __tablename__ = "chapters"
+    __table_args__ = (
+        Index('ix_chapter_novel', 'novel_id'),
+    )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    novel_id = Column(String, nullable=False)
+    novel_id = Column(String, ForeignKey("novels.id"), nullable=False)
     chapter_num = Column(Integer, nullable=False)
     title = Column(String)
     event_title = Column(String)
@@ -93,4 +107,4 @@ class ScenarioModel(Base):
     ending_conditions = Column(JSON)
     narrative_style = Column(String)
     is_custom = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.now)
+    created_at = Column(DateTime, default=datetime.now())
